@@ -40,5 +40,53 @@ setMonitorInputSource(source)
   destroyMonitorHandle(handle)
 }
 
+; Gets Monitor source
+getMonitorInputSource()
+{
+  handle := getMonitorHandle()
+  DllCall("dxva2\GetVCPFeatureAndVCPFeatureReply"
+    , "int", handle
+    , "char", 0x60 ;VCP code for Input Source Select
+    , "Ptr", 0
+    , "uint*", currentValue
+    , "uint*", maximumValue)
+  destroyMonitorHandle(handle)
+  return currentValue
+}
+
+; on = 1
+; stby = 4
+; ? = 5
+setDpmsControl(cmd)
+{
+  handle := getMonitorHandle()
+  DllCall("dxva2\SetVCPFeature"
+    , "int", handle
+    , "char", 0xd6
+    , "uint", cmd)
+  destroyMonitorHandle(handle)
+}
+
+getDpmsControl()
+{
+  DllCall("dxva2\GetVCPFeatureAndVCPFeatureReply"
+    , "int", handle
+    , "char", 0xd6 ;Power Mode
+    , "Ptr", 0
+    , "uint*", currentValue
+    , "uint*", maximumValue)
+  destroyMonitorHandle(handle)
+  return currentValue
+}
+
+; if powered off, bring monitor on
+pwr := getDpmsControl()
+if(pwr != 1)
+  setDpmsControl(1)
+
+; wait for control to be relinquished
+while(getMonitorInputSource() = 0)
+  Sleep, 500
+
 setMonitorInputSource(15)
 
